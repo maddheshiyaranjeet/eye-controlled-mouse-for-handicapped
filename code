@@ -1,0 +1,80 @@
+import cv2
+import mediapipe as mp
+import pyautogui
+import time  # Import the time module for better sleep control
+
+# --- CONFIGURATION ---
+BLINK_THRESHOLD = 0.006  # <--- Adjust this value! (0.004 is strict, 0.008 is loose)
+CLICK_COOLDOWN = 0.5  # Time to wait after a click (seconds)
+
+cam = cv2.VideoCapture(0)
+# Check if camera opened successfully
+if not cam.isOpened():
+    print("Error: Could not open webcam.")
+    exit()
+
+face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
+screen_w, screen_h = pyautogui.size()
+
+# Initialize last_click_time for cooldown check
+last_click_time = time.time()
+
+while True:
+    _, frame = cam.read()
+    frame = cv2.flip(frame, 1)
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    output = face_mesh.process(rgb_frame)
+    landmark_points = output.multi_face_landmarks
+    frame_h, frame_w, _ = frame.shape
+
+    if landmark_points:
+        landmarks = landmark_points[0].landmark
+
+        # --- CURSOR MOVEMENT (Right Eye Iris) ---
+        # Landmarks 474:478 are for the right iris
+        for id, landmark in enumerate(landmarks[474:478]):
+            x = int(landmark.x * frame_w)
+            y = int(landmark.y * frame_h)
+            cv2.circle(frame, (x, y), 3, (0, 255, 255), -1)  # -1 fills the circle
+
+            if id == 1:
+                # Map video coordinates to screen coordinates
+                screen_x = screen_w / frame_w * x
+                screen_y = screen_h / frame_h * y
+                pyautogui.moveTo(screen_x, screen_y)
+
+        # --- CLICK DETECTION (Left Eye Eyelids) ---
+        # Landmarks 145 (lower eyelid) and 159 (upper eyelid)
+        left = [landmarks[145], landmarks[159]]
+
+        for landmark in left:
+            x = int(landmark.x * frame_w)
+            y = int(landmark.y * frame_h)
+            cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)  # Green circles for left eye
+
+        # Calculate the vertical distance between eyelids
+        blink_distance = left[0].y - left[1].y
+
+        # --- DEBUGGING AND ACTION ---
+        # Print distance to console for calibration
+        print(f"Blink Distance: {blink_distance:.4f}")
+
+        # Check if the eye is closed AND enough time has passed since the last click
+        if blink_distance < BLINK_THRESHOLD and (time.time() - last_click_time) > CLICK_COOLDOWN:
+            pyautogui.click()
+            print("CLICK!")
+            last_click_time = time.time()  # Reset the timer
+
+            # Draw a BIG RED circle when a click happens
+            cv2.circle(frame, (frame_w // 2, frame_h // 2), 50, (0, 0, 255), 5)
+
+            # --- VIDEO DISPLAY AND EXIT ---
+    cv2.imshow('Eye Controlled Mouse', frame)
+
+    # Use 'q' to break the loop and stop the script cleanly
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Clean up resources
+cam.release()
+cv2.destroyAllWindows()
