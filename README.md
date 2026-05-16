@@ -117,4 +117,4 @@ The cursor position is determined by the **Normalized Iris Center**, which is th
 * **Kalman Filtering:** Add a mathematical smoothing filter to eliminate cursor "jitter" caused by natural eye micro-movements (saccades).
 * **Voice-Overlays:** Integrate a speech-to-text engine for typing while moving the mouse with eyes.
 
----
+--
