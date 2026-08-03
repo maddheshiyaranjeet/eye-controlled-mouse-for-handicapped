@@ -6,7 +6,7 @@ In conclusion, the eye-controlled mouse is a powerful and innovative tool that e
 
 
 
-## ✨ Key Highlights
+## ✨ Key Highlights 
  
 * **♿ Accessibility First:** Designed  specifically for people with ALS, quadriplegia, or advanced motor disabilities. 
 * **🎯 Sub-Pixel Precision:** Uses **MediaPipe’s Refined Iris Landmarks** (474–478) for stable cursor positioning.
